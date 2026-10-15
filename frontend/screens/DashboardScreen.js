@@ -1,9 +1,11 @@
 import React, { useCallback, useState } from "react";
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, Alert, Platform, StyleSheet } from "react-native";
+import { View, Text, FlatList, ActivityIndicator, Alert, Platform, StyleSheet } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import EmployeeItem from "../components/EmployeeItem";
 import AddEmployeeForm from "../components/AddEmployeeForm";
 import ClusterSummary from "../components/ClusterSummary";
+import MarioButton from "../components/MarioButton";
+import { colors } from "../theme";
 import { getEmployees, addEmployee, toggleStatus, deleteEmployee, getSalaryClusters } from "../api";
 
 export default function DashboardScreen() {
@@ -86,12 +88,10 @@ export default function DashboardScreen() {
   const header = (
     <View>
       <AddEmployeeForm onSubmit={onAdd} />
-      <TouchableOpacity style={styles.analyze} onPress={onAnalyze} disabled={analyzing}>
-        <Text style={styles.analyzeText}>Analyze Salary Structure</Text>
-      </TouchableOpacity>
-      {analyzing && <ActivityIndicator size="large" style={{ marginVertical: 12 }} />}
+      <MarioButton title="📊 Analyze Salary Structure" color="blue" onPress={onAnalyze} disabled={analyzing} style={{ marginBottom: 12 }} />
+      {analyzing && <ActivityIndicator size="large" color={colors.yellow} style={{ marginVertical: 12 }} />}
       {!analyzing && <ClusterSummary clusters={clusters} />}
-      <Text style={styles.section}>Employees ({employees.length})</Text>
+      <Text style={styles.section}>🏰 Employees ({employees.length})</Text>
     </View>
   );
 
@@ -112,9 +112,7 @@ export default function DashboardScreen() {
 }
 
 const styles = StyleSheet.create({
-  list: { flex: 1, backgroundColor: "#f4f6fa" },
-  analyze: { backgroundColor: "#7c3aed", padding: 14, borderRadius: 8, alignItems: "center", marginBottom: 12 },
-  analyzeText: { color: "#fff", fontWeight: "700" },
-  section: { fontSize: 16, fontWeight: "700", marginVertical: 8 },
-  empty: { textAlign: "center", color: "#777", marginTop: 12 },
+  list: { flex: 1, backgroundColor: colors.sky },
+  section: { fontSize: 20, fontWeight: "900", marginVertical: 8, color: colors.white, textShadowColor: colors.ink, textShadowOffset: { width: 2, height: 2 }, textShadowRadius: 0 },
+  empty: { textAlign: "center", color: colors.white, fontWeight: "700", marginTop: 12 },
 });
