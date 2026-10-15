@@ -45,8 +45,10 @@ const toEmployee = (row) => ({
 });
 
 const parseId = (raw) => (/^[1-9]\d*$/.test(raw) ? Number(raw) : null);
-const serverError = (res) =>
-  res.status(500).json({ success: false, message: "Internal server error" });
+const serverError = (res, err) => {
+  if (err) console.error("Request error:", err.code || "", err.sqlMessage || err.message);
+  return res.status(500).json({ success: false, message: "Internal server error" });
+};
 
 async function findEmployee(id) {
   const [rows] = await pool.query(`${SELECT_SQL} WHERE ?? = ?`, [...SELECT_PARAMS, COL.id, id]);
@@ -71,7 +73,7 @@ router.get("/employees/salary-clusters", async (req, res) => {
     const clusters = kmeans1D(rows.map((r) => Number(r.salary)), 3);
     res.status(200).json({ success: true, clusters });
   } catch (err) {
-    serverError(res);
+    serverError(res, err);
   }
 });
 
@@ -80,7 +82,7 @@ router.get("/employees", async (req, res) => {
     const [rows] = await pool.query(`${SELECT_SQL} ORDER BY ??`, [...SELECT_PARAMS, COL.id]);
     res.status(200).json(rows.map(toEmployee));
   } catch (err) {
-    serverError(res);
+    serverError(res, err);
   }
 });
 
@@ -104,7 +106,7 @@ router.post("/employees", async (req, res) => {
     );
     res.status(201).json(await findEmployee(result.insertId));
   } catch (err) {
-    serverError(res);
+    serverError(res, err);
   }
 });
 
@@ -121,7 +123,7 @@ router.put("/employees/:id/status", async (req, res) => {
     }
     res.status(200).json(await findEmployee(id));
   } catch (err) {
-    serverError(res);
+    serverError(res, err);
   }
 });
 
@@ -135,7 +137,7 @@ router.delete("/employees/:id", async (req, res) => {
     }
     res.status(200).json({ success: true });
   } catch (err) {
-    serverError(res);
+    serverError(res, err);
   }
 });
 
@@ -148,7 +150,7 @@ app.use((err, req, res, next) => {
   if (err && (err.type === "entity.parse.failed" || err instanceof SyntaxError)) {
     return res.status(400).json({ success: false, message: "Malformed JSON body" });
   }
-  serverError(res);
+  serverError(res, err);
 });
 
 process.on("uncaughtException", (e) => console.error("uncaughtException:", e.message));
