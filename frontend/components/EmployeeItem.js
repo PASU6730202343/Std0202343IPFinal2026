@@ -5,7 +5,7 @@ import { colors, block } from "../theme";
 
 export const formatSalary = (n) => Number(n).toLocaleString("en-US");
 
-export default function EmployeeItem({ employee, onToggle, onDelete }) {
+export default function EmployeeItem({ employee, onToggle, onDelete, onEdit }) {
   const active = employee.status === "Active";
   return (
     <View style={styles.card}>
@@ -18,6 +18,7 @@ export default function EmployeeItem({ employee, onToggle, onDelete }) {
       <Text style={styles.position}>{employee.position}</Text>
       <Text style={styles.salary}>🪙 {formatSalary(employee.salary)}</Text>
       <View style={styles.actions}>
+        <MarioButton title="Edit" color="yellow" small onPress={() => onEdit(employee)} style={styles.action} />
         <MarioButton title="Toggle Status" color="blue" small onPress={() => onToggle(employee.id)} style={styles.action} />
         <MarioButton title="Delete" color="red" small onPress={() => onDelete(employee)} style={styles.action} />
       </View>

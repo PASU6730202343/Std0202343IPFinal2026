@@ -39,8 +39,9 @@ Other users can sign up from the app (Register screen); they are stored in the `
 | --- | --- | --- |
 | POST | `/register` | Create a user (`username`, `password`), 409 if the username is taken |
 | POST | `/login` | Returns `{ success, token }` on valid credentials, 401 otherwise |
-| GET | `/employees` | List all employees |
+| GET | `/employees` | List all employees; optional `?search=` filters by name or position |
 | POST | `/employees` | Create employee (`name`, `position`, `salary`) |
+| PUT | `/employees/:id` | Edit an employee (`name`, `position`, `salary`) |
 | PUT | `/employees/:id/status` | Toggle Active / On Leave |
 | DELETE | `/employees/:id` | Delete an employee |
 | GET | `/employees/salary-clusters` | K-Means (k=3) salary tiers: `Tier 1..3` with centroid and count |

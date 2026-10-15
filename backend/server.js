@@ -59,6 +59,16 @@ const verifyPassword = (password, stored) => {
   return actual.length === expected.length && crypto.timingSafeEqual(actual, expected);
 };
 
+// Returns { error } or { name, position, salary } for employee input
+const validateEmployee = ({ name, position, salary } = {}) => {
+  if (typeof name !== "string" || name.trim() === "") return { error: "Name is required" };
+  if (typeof position !== "string" || position.trim() === "") return { error: "Position is required" };
+  const usable = typeof salary === "number" || (typeof salary === "string" && salary.trim() !== "");
+  const salaryNum = usable ? Number(salary) : NaN;
+  if (!Number.isFinite(salaryNum) || salaryNum <= 0) return { error: "Salary must be a number greater than 0" };
+  return { name: name.trim(), position: position.trim(), salary: salaryNum };
+};
+
 const parseId = (raw) => (/^[1-9]\d*$/.test(raw) ? Number(raw) : null);
 const serverError = (res, err) => {
   if (err) console.error("Request error:", err.code || "", err.sqlMessage || err.message);
@@ -135,7 +145,16 @@ router.get("/employees/salary-clusters", async (req, res) => {
 
 router.get("/employees", async (req, res) => {
   try {
-    const [rows] = await pool.query(`${SELECT_SQL} ORDER BY ??`, [...SELECT_PARAMS, COL.id]);
+    const search = typeof req.query.search === "string" ? req.query.search.trim() : "";
+    let sql = SELECT_SQL;
+    let params = [...SELECT_PARAMS];
+    if (search) {
+      const escaped = search.replace(/[\\%_]/g, (ch) => "\\" + ch); // treat % and _ literally
+      const like = "%" + escaped + "%";
+      sql += " WHERE (?? LIKE ? OR ?? LIKE ?)";
+      params.push(COL.name, like, COL.position, like);
+    }
+    const [rows] = await pool.query(sql + " ORDER BY ??", [...params, COL.id]);
     res.status(200).json(rows.map(toEmployee));
   } catch (err) {
     serverError(res, err);
@@ -144,23 +163,31 @@ router.get("/employees", async (req, res) => {
 
 router.post("/employees", async (req, res) => {
   try {
-    const { name, position, salary } = req.body || {};
-    if (typeof name !== "string" || name.trim() === "") {
-      return res.status(400).json({ success: false, message: "Name is required" });
-    }
-    if (typeof position !== "string" || position.trim() === "") {
-      return res.status(400).json({ success: false, message: "Position is required" });
-    }
-    const usable = typeof salary === "number" || (typeof salary === "string" && salary.trim() !== "");
-    const salaryNum = usable ? Number(salary) : NaN;
-    if (!Number.isFinite(salaryNum) || salaryNum <= 0) {
-      return res.status(400).json({ success: false, message: "Salary must be a number greater than 0" });
-    }
+    const v = validateEmployee(req.body || {});
+    if (v.error) return res.status(400).json({ success: false, message: v.error });
     const [result] = await pool.query(
       `INSERT INTO ${TABLE} (??, ??, ??, ??) VALUES (?, ?, 'Active', ?)`,
-      [COL.name, COL.position, COL.status, COL.salary, name.trim(), position.trim(), salaryNum]
+      [COL.name, COL.position, COL.status, COL.salary, v.name, v.position, v.salary]
     );
     res.status(201).json(await findEmployee(result.insertId));
+  } catch (err) {
+    serverError(res, err);
+  }
+});
+
+// Edit name / position / salary (status has its own toggle route)
+router.put("/employees/:id", async (req, res) => {
+  try {
+    const id = parseId(req.params.id);
+    if (id === null || !(await findEmployee(id))) {
+      return res.status(404).json({ success: false, message: "Employee not found" });
+    }
+    const v = validateEmployee(req.body || {});
+    if (v.error) return res.status(400).json({ success: false, message: v.error });
+    await pool.query(`UPDATE ${TABLE} SET ?? = ?, ?? = ?, ?? = ? WHERE ?? = ?`, [
+      COL.name, v.name, COL.position, v.position, COL.salary, v.salary, COL.id, id,
+    ]);
+    res.status(200).json(await findEmployee(id));
   } catch (err) {
     serverError(res, err);
   }

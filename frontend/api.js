@@ -24,6 +24,8 @@ export const register = (username, password) =>
 export const getEmployees = () => request("/employees");
 export const addEmployee = (employee) =>
   request("/employees", { method: "POST", body: JSON.stringify(employee) });
+export const updateEmployee = (id, employee) =>
+  request(`/employees/${id}`, { method: "PUT", body: JSON.stringify(employee) });
 export const toggleStatus = (id) => request(`/employees/${id}/status`, { method: "PUT" });
 export const deleteEmployee = (id) => request(`/employees/${id}`, { method: "DELETE" });
 export const getSalaryClusters = () => request("/employees/salary-clusters");
