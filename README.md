@@ -31,10 +31,13 @@ The URL already includes `/api`, e.g. `http://119.59.102.161:3034/api`.
 - Username: `admin`
 - Password: `password123`
 
+Other users can sign up from the app (Register screen); they are stored in the `Pasu_userexam` table (see `backend/schema.sql`).
+
 ## Endpoints (all under `/api`)
 
 | Method | Path | Description |
 | --- | --- | --- |
+| POST | `/register` | Create a user (`username`, `password`), 409 if the username is taken |
 | POST | `/login` | Returns `{ success, token }` on valid credentials, 401 otherwise |
 | GET | `/employees` | List all employees |
 | POST | `/employees` | Create employee (`name`, `position`, `salary`) |

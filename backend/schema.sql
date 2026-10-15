@@ -13,3 +13,11 @@ INSERT INTO employees (name, position, status, salary) VALUES
   ('Mike Brown', 'Intern', 'On Leave', 15000.00),
   ('Sara Lee', 'Manager', 'Active', 85000.00),
   ('Tom Hill', 'QA Tester', 'Active', 22000.00);
+
+-- Registered users (passwords are stored as salt:scrypt-hash, never plain text)
+CREATE TABLE IF NOT EXISTS Pasu_userexam (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  username VARCHAR(30) NOT NULL UNIQUE,
+  password VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

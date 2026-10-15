@@ -64,6 +64,13 @@ export default function LoginScreen({ navigation }) {
           onChangeText={setPassword}
         />
         <MarioButton title="▶ START" color="red" onPress={onLogin} loading={loading} />
+        <MarioButton
+          title="📝 New player? Register"
+          color="green"
+          small
+          onPress={() => navigation.navigate("Register")}
+          style={{ marginTop: 10 }}
+        />
       </View>
 
       <View style={styles.ground}>

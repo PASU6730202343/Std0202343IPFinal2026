@@ -19,6 +19,8 @@ async function request(path, options = {}) {
 
 export const login = (username, password) =>
   request("/login", { method: "POST", body: JSON.stringify({ username, password }) });
+export const register = (username, password) =>
+  request("/register", { method: "POST", body: JSON.stringify({ username, password }) });
 export const getEmployees = () => request("/employees");
 export const addEmployee = (employee) =>
   request("/employees", { method: "POST", body: JSON.stringify(employee) });

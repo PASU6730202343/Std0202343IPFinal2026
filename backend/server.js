@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const mysql = require("mysql2/promise");
+const crypto = require("crypto");
 const { kmeans1D } = require("./kmeans");
 
 const app = express();
@@ -33,6 +34,7 @@ const COL = {
   salary: process.env.COL_SALARY || "salary",
 };
 const TABLE = mysql.escapeId(env("DB_TABLE", "TABLE_NAME", "MYSQL_TABLE") || "employees");
+const USERS_TABLE = mysql.escapeId(env("USERS_TABLE") || "Pasu_userexam");
 const SELECT_SQL = `SELECT ?? AS id, ?? AS name, ?? AS position, ?? AS status, ?? AS salary FROM ${TABLE}`;
 const SELECT_PARAMS = [COL.id, COL.name, COL.position, COL.status, COL.salary];
 
@@ -43,6 +45,19 @@ const toEmployee = (row) => ({
   status: row.status,
   salary: Number(row.salary),
 });
+
+// Password hashing with built-in scrypt (stored as salt:hash, hex)
+const hashPassword = (password) => {
+  const salt = crypto.randomBytes(16).toString("hex");
+  return `${salt}:${crypto.scryptSync(password, salt, 64).toString("hex")}`;
+};
+const verifyPassword = (password, stored) => {
+  const [salt, hash] = String(stored).split(":");
+  if (!salt || !hash) return false;
+  const expected = Buffer.from(hash, "hex");
+  const actual = crypto.scryptSync(password, salt, expected.length);
+  return actual.length === expected.length && crypto.timingSafeEqual(actual, expected);
+};
 
 const parseId = (raw) => (/^[1-9]\d*$/.test(raw) ? Number(raw) : null);
 const serverError = (res, err) => {
@@ -57,13 +72,54 @@ async function findEmployee(id) {
 
 const router = express.Router();
 
-router.post("/login", (req, res) => {
-  const { username, password } = req.body || {};
-  if (typeof username === "string" && typeof password === "string" &&
-      username === "admin" && password === "password123") {
-    return res.status(200).json({ success: true, token: "mock-jwt-token" });
+router.post("/login", async (req, res) => {
+  try {
+    const { username, password } = req.body || {};
+    const invalid = () =>
+      res.status(401).json({ success: false, message: "Invalid username or password" });
+    if (typeof username !== "string" || typeof password !== "string") return invalid();
+
+    if (username === "admin" && password === "password123") {
+      return res.status(200).json({ success: true, token: "mock-jwt-token" });
+    }
+    const [rows] = await pool.query(`SELECT password FROM ${USERS_TABLE} WHERE username = ?`, [username.trim()]);
+    if (rows.length && verifyPassword(password, rows[0].password)) {
+      return res.status(200).json({ success: true, token: "mock-jwt-token" });
+    }
+    invalid();
+  } catch (err) {
+    serverError(res, err);
   }
-  res.status(401).json({ success: false, message: "Invalid username or password" });
+});
+
+router.post("/register", async (req, res) => {
+  try {
+    const { username, password } = req.body || {};
+    if (typeof username !== "string" || !/^[A-Za-z0-9_]{3,30}$/.test(username.trim())) {
+      return res.status(400).json({
+        success: false,
+        message: "Username must be 3-30 characters (letters, numbers, underscore)",
+      });
+    }
+    if (typeof password !== "string" || password.length < 6 || password.length > 100) {
+      return res.status(400).json({ success: false, message: "Password must be at least 6 characters" });
+    }
+    const name = username.trim();
+    if (name.toLowerCase() === "admin") {
+      return res.status(409).json({ success: false, message: "Username already taken" });
+    }
+    try {
+      await pool.query(`INSERT INTO ${USERS_TABLE} (username, password) VALUES (?, ?)`, [name, hashPassword(password)]);
+    } catch (e) {
+      if (e && e.code === "ER_DUP_ENTRY") {
+        return res.status(409).json({ success: false, message: "Username already taken" });
+      }
+      throw e;
+    }
+    res.status(201).json({ success: true, message: "Registered successfully" });
+  } catch (err) {
+    serverError(res, err);
+  }
 });
 
 // Must be registered before any /:id route
