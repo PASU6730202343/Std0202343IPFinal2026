@@ -98,7 +98,7 @@ export default function DashboardScreen() {
   return (
     <FlatList
       style={styles.list}
-      contentContainerStyle={{ padding: 12 }}
+      contentContainerStyle={styles.content}
       data={employees}
       keyExtractor={(e) => e.id}
       renderItem={({ item }) => <EmployeeItem employee={item} onToggle={onToggle} onDelete={onDelete} />}
@@ -113,6 +113,7 @@ export default function DashboardScreen() {
 
 const styles = StyleSheet.create({
   list: { flex: 1, backgroundColor: colors.sky },
+  content: { padding: 12, paddingBottom: 32, width: "100%", maxWidth: 480, alignSelf: "center" },
   section: { fontSize: 20, fontWeight: "900", marginVertical: 8, color: colors.white, textShadowColor: colors.ink, textShadowOffset: { width: 2, height: 2 }, textShadowRadius: 0 },
   empty: { textAlign: "center", color: colors.white, fontWeight: "700", marginTop: 12 },
 });

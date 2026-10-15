@@ -35,6 +35,6 @@ const styles = StyleSheet.create({
   active: { backgroundColor: colors.green },
   leave: { backgroundColor: colors.orange },
   badgeText: { color: colors.white, fontSize: 12, fontWeight: "800" },
-  actions: { flexDirection: "row", marginTop: 12 },
-  action: { marginRight: 10 },
+  actions: { flexDirection: "row", flexWrap: "wrap", marginTop: 12 },
+  action: { marginRight: 10, marginBottom: 6 },
 });
