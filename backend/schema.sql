@@ -8,9 +8,8 @@ CREATE TABLE IF NOT EXISTS employees (
 );
 
 INSERT INTO employees (name, position, status, salary) VALUES
-  ('Somchai Prasert', 'Junior Developer', 'Active', 18000.00),
-  ('Malee Suksan', 'Office Assistant', 'Active', 19500.00),
-  ('Anan Boonmee', 'Accountant', 'On Leave', 42000.00),
-  ('Preeya Chaiyo', 'Project Manager', 'Active', 47000.00),
-  ('Krit Wongsa', 'Senior Engineer', 'Active', 85000.00),
-  ('Naree Thongdee', 'Director', 'Active', 120000.00);
+  ('John Doe', 'Software Engineer', 'Active', 45000.00),
+  ('Jane Smith', 'Designer', 'Active', 38000.00),
+  ('Mike Brown', 'Intern', 'On Leave', 15000.00),
+  ('Sara Lee', 'Manager', 'Active', 85000.00),
+  ('Tom Hill', 'QA Tester', 'Active', 22000.00);
