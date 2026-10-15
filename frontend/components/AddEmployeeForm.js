@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet } from "react-native";
 
 export default function AddEmployeeForm({ onSubmit }) {
   const [name, setName] = useState("");
@@ -12,8 +12,8 @@ export default function AddEmployeeForm({ onSubmit }) {
     const n = name.trim();
     const p = position.trim();
     const s = Number(salary.trim());
-    if (!n || !p || !salary.trim()) return setError("All fields are required.");
-    if (!Number.isFinite(s) || s <= 0) return setError("Salary must be a number greater than 0.");
+    if (!n || !p || !salary.trim()) return Alert.alert("Invalid input", "All fields are required.");
+    if (!Number.isFinite(s) || s <= 0) return Alert.alert("Invalid input", "Salary must be a number greater than 0.");
     setError("");
     setSaving(true);
     try {

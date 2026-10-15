@@ -1,16 +1,17 @@
 # Std0202343IPFinal2026
 
-HR employee manager. Express.js backend (in-memory data, no database) and an Expo (React Native) frontend.
+HR employee manager. Express.js backend (MySQL) and an Expo (React Native) frontend.
 
 ## Run the backend
 
 ```bash
 cd backend
+cp .env.example .env   # then fill in your DB values
 npm install
 npm start
 ```
 
-Listens on `0.0.0.0:3034` by default (override with the `PORT` env variable).
+Listens on `0.0.0.0:3034` by default (override with `PORT`). The `employees` table schema and seed data are in `backend/schema.sql`.
 
 ## Run the frontend
 
