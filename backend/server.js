@@ -26,7 +26,8 @@ const COL = {
   status: process.env.COL_STATUS || "status",
   salary: process.env.COL_SALARY || "salary",
 };
-const SELECT_SQL = "SELECT ?? AS id, ?? AS name, ?? AS position, ?? AS status, ?? AS salary FROM employees";
+const TABLE = mysql.escapeId(process.env.DB_TABLE || "employees");
+const SELECT_SQL = `SELECT ?? AS id, ?? AS name, ?? AS position, ?? AS status, ?? AS salary FROM ${TABLE}`;
 const SELECT_PARAMS = [COL.id, COL.name, COL.position, COL.status, COL.salary];
 
 const toEmployee = (row) => ({
@@ -60,7 +61,7 @@ router.post("/login", (req, res) => {
 // Must be registered before any /:id route
 router.get("/employees/salary-clusters", async (req, res) => {
   try {
-    const [rows] = await pool.query("SELECT ?? AS salary FROM employees", [COL.salary]);
+    const [rows] = await pool.query(`SELECT ?? AS salary FROM ${TABLE}`, [COL.salary]);
     const clusters = kmeans1D(rows.map((r) => Number(r.salary)), 3);
     res.status(200).json({ success: true, clusters });
   } catch (err) {
@@ -92,7 +93,7 @@ router.post("/employees", async (req, res) => {
       return res.status(400).json({ success: false, message: "Salary must be a number greater than 0" });
     }
     const [result] = await pool.query(
-      "INSERT INTO employees (??, ??, ??, ??) VALUES (?, ?, 'Active', ?)",
+      `INSERT INTO ${TABLE} (??, ??, ??, ??) VALUES (?, ?, 'Active', ?)`,
       [COL.name, COL.position, COL.status, COL.salary, name.trim(), position.trim(), salaryNum]
     );
     res.status(201).json(await findEmployee(result.insertId));
@@ -106,7 +107,7 @@ router.put("/employees/:id/status", async (req, res) => {
     const id = parseId(req.params.id);
     if (id === null) return res.status(404).json({ success: false, message: "Employee not found" });
     const [result] = await pool.query(
-      "UPDATE employees SET ?? = CASE WHEN ?? = 'Active' THEN 'On Leave' ELSE 'Active' END WHERE ?? = ?",
+      `UPDATE ${TABLE} SET ?? = CASE WHEN ?? = 'Active' THEN 'On Leave' ELSE 'Active' END WHERE ?? = ?`,
       [COL.status, COL.status, COL.id, id]
     );
     if (result.affectedRows === 0) {
@@ -122,7 +123,7 @@ router.delete("/employees/:id", async (req, res) => {
   try {
     const id = parseId(req.params.id);
     if (id === null) return res.status(404).json({ success: false, message: "Employee not found" });
-    const [result] = await pool.query("DELETE FROM employees WHERE ?? = ?", [COL.id, id]);
+    const [result] = await pool.query(`DELETE FROM ${TABLE} WHERE ?? = ?`, [COL.id, id]);
     if (result.affectedRows === 0) {
       return res.status(404).json({ success: false, message: "Employee not found" });
     }
