@@ -8,12 +8,18 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// First defined env var wins, so common alternative names also work
+const env = (...names) => {
+  const found = names.find((n) => process.env[n] !== undefined && process.env[n] !== "");
+  return found ? process.env[found] : undefined;
+};
+
 const pool = mysql.createPool({
-  host: process.env.DB_HOST,
-  port: Number(process.env.DB_PORT) || 3306,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
+  host: env("DB_HOST", "MYSQL_HOST", "MYSQLHOST", "DATABASE_HOST", "HOST") || "localhost",
+  port: Number(env("DB_PORT", "MYSQL_PORT", "MYSQLPORT", "DATABASE_PORT")) || 3306,
+  user: env("DB_USER", "DB_USERNAME", "MYSQL_USER", "MYSQLUSER", "DATABASE_USER", "USER_DB"),
+  password: env("DB_PASSWORD", "DB_PASS", "MYSQL_PASSWORD", "MYSQLPASSWORD", "DATABASE_PASSWORD"),
+  database: env("DB_NAME", "DB_DATABASE", "MYSQL_DATABASE", "MYSQLDATABASE", "DATABASE_NAME", "DATABASE"),
   waitForConnections: true,
   connectionLimit: 10,
 });
@@ -26,7 +32,7 @@ const COL = {
   status: process.env.COL_STATUS || "status",
   salary: process.env.COL_SALARY || "salary",
 };
-const TABLE = mysql.escapeId(process.env.DB_TABLE || "employees");
+const TABLE = mysql.escapeId(env("DB_TABLE", "TABLE_NAME", "MYSQL_TABLE") || "employees");
 const SELECT_SQL = `SELECT ?? AS id, ?? AS name, ?? AS position, ?? AS status, ?? AS salary FROM ${TABLE}`;
 const SELECT_PARAMS = [COL.id, COL.name, COL.position, COL.status, COL.salary];
 
