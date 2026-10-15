@@ -18,6 +18,17 @@ const pool = mysql.createPool({
   connectionLimit: 10,
 });
 
+// Column names in the DB table (override in .env if the table uses a prefix, e.g. NinSom_name)
+const COL = {
+  id: process.env.COL_ID || "id",
+  name: process.env.COL_NAME || "name",
+  position: process.env.COL_POSITION || "position",
+  status: process.env.COL_STATUS || "status",
+  salary: process.env.COL_SALARY || "salary",
+};
+const SELECT_SQL = "SELECT ?? AS id, ?? AS name, ?? AS position, ?? AS status, ?? AS salary FROM employees";
+const SELECT_PARAMS = [COL.id, COL.name, COL.position, COL.status, COL.salary];
+
 const toEmployee = (row) => ({
   id: String(row.id),
   name: row.name,
@@ -31,7 +42,7 @@ const serverError = (res) =>
   res.status(500).json({ success: false, message: "Internal server error" });
 
 async function findEmployee(id) {
-  const [rows] = await pool.query("SELECT * FROM employees WHERE id = ?", [id]);
+  const [rows] = await pool.query(`${SELECT_SQL} WHERE ?? = ?`, [...SELECT_PARAMS, COL.id, id]);
   return rows.length ? toEmployee(rows[0]) : null;
 }
 
@@ -49,7 +60,7 @@ router.post("/login", (req, res) => {
 // Must be registered before any /:id route
 router.get("/employees/salary-clusters", async (req, res) => {
   try {
-    const [rows] = await pool.query("SELECT salary FROM employees");
+    const [rows] = await pool.query("SELECT ?? AS salary FROM employees", [COL.salary]);
     const clusters = kmeans1D(rows.map((r) => Number(r.salary)), 3);
     res.status(200).json({ success: true, clusters });
   } catch (err) {
@@ -59,7 +70,7 @@ router.get("/employees/salary-clusters", async (req, res) => {
 
 router.get("/employees", async (req, res) => {
   try {
-    const [rows] = await pool.query("SELECT * FROM employees ORDER BY id");
+    const [rows] = await pool.query(`${SELECT_SQL} ORDER BY ??`, [...SELECT_PARAMS, COL.id]);
     res.status(200).json(rows.map(toEmployee));
   } catch (err) {
     serverError(res);
@@ -81,8 +92,8 @@ router.post("/employees", async (req, res) => {
       return res.status(400).json({ success: false, message: "Salary must be a number greater than 0" });
     }
     const [result] = await pool.query(
-      "INSERT INTO employees (name, position, status, salary) VALUES (?, ?, 'Active', ?)",
-      [name.trim(), position.trim(), salaryNum]
+      "INSERT INTO employees (??, ??, ??, ??) VALUES (?, ?, 'Active', ?)",
+      [COL.name, COL.position, COL.status, COL.salary, name.trim(), position.trim(), salaryNum]
     );
     res.status(201).json(await findEmployee(result.insertId));
   } catch (err) {
@@ -95,8 +106,8 @@ router.put("/employees/:id/status", async (req, res) => {
     const id = parseId(req.params.id);
     if (id === null) return res.status(404).json({ success: false, message: "Employee not found" });
     const [result] = await pool.query(
-      "UPDATE employees SET status = CASE WHEN status = 'Active' THEN 'On Leave' ELSE 'Active' END WHERE id = ?",
-      [id]
+      "UPDATE employees SET ?? = CASE WHEN ?? = 'Active' THEN 'On Leave' ELSE 'Active' END WHERE ?? = ?",
+      [COL.status, COL.status, COL.id, id]
     );
     if (result.affectedRows === 0) {
       return res.status(404).json({ success: false, message: "Employee not found" });
@@ -111,7 +122,7 @@ router.delete("/employees/:id", async (req, res) => {
   try {
     const id = parseId(req.params.id);
     if (id === null) return res.status(404).json({ success: false, message: "Employee not found" });
-    const [result] = await pool.query("DELETE FROM employees WHERE id = ?", [id]);
+    const [result] = await pool.query("DELETE FROM employees WHERE ?? = ?", [COL.id, id]);
     if (result.affectedRows === 0) {
       return res.status(404).json({ success: false, message: "Employee not found" });
     }
